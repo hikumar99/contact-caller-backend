@@ -2,21 +2,20 @@
   "name": "contact-caller-frontend",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-  "express": "^4.18.2",
-  "cors": "^2.8.5",
-  "googleapis": "^120.0.0",
-  "react": "^18.3.1",
-  "react-dom": "^18.3.1",
-  "lucide-react": "^0.446.0"
-}
-
-
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "googleapis": "^120.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.446.0"
+  },
   "devDependencies": {
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
@@ -28,8 +27,7 @@
     "vite": "^5.2.0"
   },
   "engines": {
-    "node": "18.x",
-    "npm": "10.x"
+    "node": ">=18 <23",
+    "npm": ">=9 <11"
   }
 }
-
