@@ -1,7 +1,8 @@
-// server.js - Updated with proper CORS, env-driven origins, and case-insensitive headers
+// server.js - Updated with stronger empty cell handling + debug logs
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -35,12 +36,6 @@ app.use(express.json({ limit: '10mb' }));
 // Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
-// Debug middleware to log req.headers.origin
-app.use((req, res, next) => {
-  console.log(`[DEBUG] Request origin: ${req.headers.origin || 'undefined'}`);
   next();
 });
 
@@ -127,22 +122,29 @@ app.post('/api/contacts', async (req, res) => {
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const contact = {};
+
       headers.forEach((header, index) => {
-  contact[header] = (row[index] !== undefined) ? row[index] : '';
-});
+        let value = (row[index] !== undefined) ? row[index] : '';
+        if (typeof value === 'string') value = value.trim();
+        contact[header] = value;
+      });
 
       const hasContact = contact['contact'] && contact['contact'].trim() !== '';
-      const notCompleted = !contact['completedby'] || contact['completedby'].trim() === '';
+      const notCompleted = !contact['completedby'] || contact['completedby'] === '';
 
-      if (hasContact) {
-        contact.rowIndex = i + 1; // 1-based index
-        contact.isCompleted = !notCompleted; // mark if already completed
-        if (notCompleted) {
-          contacts.push(contact); // only show available ones
-        }
+      // Debug first 5 rows
+      if (i <= 5) {
+        console.log(`Row ${i}:`, contact);
+      }
+
+      if (hasContact && notCompleted) {
+        contact.rowIndex = i + 1; // Store the row index
+        contacts.push(contact);
       }
     }
 
+    console.log(`📊 Found ${rows.length - 1} rows in spreadsheet`);
+    console.log(`✅ Returning ${contacts.length} available contacts`);
     res.json({ contacts });
   } catch (error) {
     console.error('❌ Error fetching contacts:', error);
@@ -162,6 +164,7 @@ app.post('/api/complete', async (req, res) => {
     if (!spreadsheetId) return res.status(400).json({ error: 'Invalid spreadsheet URL format' });
 
     const auth = await authorize();
+
     const now = new Date();
     const istTime = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -171,8 +174,8 @@ app.post('/api/complete', async (req, res) => {
     }).format(now);
 
     const updateRequests = [
-      { range: `Sheet1!B${rowIndex}`, values: [[completedBy]] }, // ✅ CompletedBy = col B
-      { range: `Sheet1!C${rowIndex}`, values: [[istTime]] }      // ✅ CompletedAt = col C
+      { range: `Sheet1!B${rowIndex}`, values: [[completedBy]] },
+      { range: `Sheet1!C${rowIndex}`, values: [[istTime]] }
     ];
 
     await sheets.spreadsheets.values.batchUpdate({
