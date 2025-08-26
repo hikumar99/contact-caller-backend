@@ -107,7 +107,7 @@ app.post('/api/contacts', async (req, res) => {
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId,
-      range: 'Sheet1!A:D',
+      range: 'Sheet1!A:C', // ✅ only 3 columns
     });
 
     const rows = response.data.values || [];
@@ -129,9 +129,12 @@ app.post('/api/contacts', async (req, res) => {
       const hasContact = contact['contact'] && contact['contact'].trim() !== '';
       const notCompleted = !contact['completedby'] || contact['completedby'].trim() === '';
 
-      if (hasContact && notCompleted) {
+      if (hasContact) {
         contact.rowIndex = i + 1; // 1-based index
-        contacts.push(contact);
+        contact.isCompleted = !notCompleted; // mark if already completed
+        if (notCompleted) {
+          contacts.push(contact); // only show available ones
+        }
       }
     }
 
@@ -164,8 +167,8 @@ app.post('/api/complete', async (req, res) => {
     }).format(now);
 
     const updateRequests = [
-      { range: `Sheet1!C${rowIndex}`, values: [[completedBy]] }, // CompletedBy
-      { range: `Sheet1!D${rowIndex}`, values: [[istTime]] }      // CompletedAt
+      { range: `Sheet1!B${rowIndex}`, values: [[completedBy]] }, // ✅ CompletedBy = col B
+      { range: `Sheet1!C${rowIndex}`, values: [[istTime]] }      // ✅ CompletedAt = col C
     ];
 
     await sheets.spreadsheets.values.batchUpdate({
