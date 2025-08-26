@@ -9,11 +9,9 @@ const ContactCallerApp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [stats, setStats] = useState({ total: 0, completed: 0, assigned: 0 });
+  const [stats, setStats] = useState({ total: 0, completed: 0 });
   const [showInputPanel, setShowInputPanel] = useState(true);
   const [showProgress, setShowProgress] = useState(false);
-  const [assignedBatch, setAssignedBatch] = useState(null);
-  const [currentBatchNumber, setCurrentBatchNumber] = useState(0);
 
   const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
 
@@ -44,15 +42,10 @@ const ContactCallerApp = () => {
       const backendOk = await testBackend();
       if (!backendOk) return;
 
-      // Request assigned batch for this user
-      const response = await fetch(`${BACKEND_URL}/api/assign-batch`, {
+      const response = await fetch(`${BACKEND_URL}/api/contacts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          spreadsheetUrl: SHEET_URL, 
-          callerName: callerName.trim(),
-          batchSize: 12 
-        }),
+        body: JSON.stringify({ spreadsheetUrl: SHEET_URL }),
       });
 
       if (!response.ok) {
@@ -61,20 +54,13 @@ const ContactCallerApp = () => {
       }
 
       const data = await response.json();
-      
-      if (data.batch && data.batch.length > 0) {
-        setAssignedBatch(data.batch);
-        setContacts(data.batch);
-        setCurrentBatchNumber(data.batchNumber || 1);
-        setStats({ 
-          total: data.totalAvailable || 0, 
-          completed: 0, 
-          assigned: data.batch.length 
-        });
-        setSuccess(`Assigned batch #${data.batchNumber || 1} with ${data.batch.length} contacts!`);
+      setContacts(data.contacts || []);
+      setStats({ total: data.contacts?.length || 0, completed: 0 });
+
+      if (data.contacts && data.contacts.length > 0) {
+        setSuccess(`Loaded ${data.contacts.length} contacts successfully!`);
       } else {
-        setError('No available contacts found. All contacts may be assigned or completed.');
-        setContacts([]);
+        setError('No available contacts found in spreadsheet');
       }
     } catch (error: any) {
       console.error('Error loading contacts:', error);
@@ -108,70 +94,14 @@ const ContactCallerApp = () => {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
-      // Remove completed contact from current list
       const updatedContacts = contacts.filter(c => c.rowIndex !== contactToComplete.rowIndex);
       setContacts(updatedContacts);
-      setStats(prev => ({ 
-        ...prev, 
-        completed: prev.completed + 1,
-        assigned: updatedContacts.length 
-      }));
+      setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
 
       setSuccess('Contact completed!');
-
-      // If all 12 contacts are completed, automatically load next batch
-      if (updatedContacts.length === 0) {
-        setSuccess('Batch completed! Loading next batch...');
-        setTimeout(() => {
-          loadNextBatch();
-        }, 1500);
-      }
     } catch (error: any) {
       console.error('Error completing contact:', error);
       setError(`Failed to mark contact as complete: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadNextBatch = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/assign-batch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          spreadsheetUrl: SHEET_URL, 
-          callerName: callerName.trim(),
-          batchSize: 12 
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.batch && data.batch.length > 0) {
-        setAssignedBatch(data.batch);
-        setContacts(data.batch);
-        setCurrentBatchNumber(data.batchNumber || currentBatchNumber + 1);
-        setStats(prev => ({ 
-          ...prev, 
-          assigned: data.batch.length 
-        }));
-        setSuccess(`New batch #${data.batchNumber || currentBatchNumber + 1} loaded with ${data.batch.length} contacts!`);
-      } else {
-        setSuccess('All contacts completed! No more contacts available.');
-        setContacts([]);
-      }
-    } catch (error: any) {
-      console.error('Error loading next batch:', error);
-      setError(`Failed to load next batch: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -259,11 +189,11 @@ const ContactCallerApp = () => {
             {/* Stats */}
             {contacts.length > 0 && (
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-3">Batch #{currentBatchNumber} Progress for {callerName}</h3>
-                <div className="grid grid-cols-4 gap-4 text-center">
+                <h3 className="text-lg font-semibold mb-3">Progress for {callerName}</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="bg-blue-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-blue-600">{contacts.length}</div>
-                    <div className="text-sm text-gray-600">Current Batch</div>
+                    <div className="text-sm text-gray-600">Remaining</div>
                   </div>
                   <div className="bg-green-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
@@ -271,24 +201,9 @@ const ContactCallerApp = () => {
                   </div>
                   <div className="bg-purple-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-purple-600">{stats.total}</div>
-                    <div className="text-sm text-gray-600">Total Available</div>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-orange-600">{12 - contacts.length}</div>
-                    <div className="text-sm text-gray-600">Done in Batch</div>
+                    <div className="text-sm text-gray-600">Total</div>
                   </div>
                 </div>
-                {contacts.length === 0 && (
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={loadNextBatch}
-                      disabled={loading}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
-                    >
-                      Load Next Batch
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
@@ -297,7 +212,7 @@ const ContactCallerApp = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Phone className="h-5 w-5" />
-                  Your Assigned Batch #{currentBatchNumber} ({contacts.length}/12 remaining)
+                  Current Contacts ({contacts.length} available)
                 </h3>
                 
                 {/* Debug info - remove this after testing */}
@@ -317,7 +232,7 @@ const ContactCallerApp = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {contacts.map((contact, index) => {
+                      {contacts.slice(0, 12).map((contact, index) => {
                         // Extract phone number - try different possible property names including "Contact" with spaces
                         const phoneNumber = contact['Contact'] || 
                                           contact[' Contact '] || 
@@ -367,24 +282,6 @@ const ContactCallerApp = () => {
                       })}
                     </tbody>
                   </table>
-                </div>
-              </div>
-            )}
-
-            {/* Empty state when no contacts */}
-            {showProgress && contacts.length === 0 && !loading && (
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6 text-center">
-                <div className="py-8">
-                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Batch Completed!</h3>
-                  <p className="text-gray-600 mb-4">You've completed all contacts in your current batch.</p>
-                  <button
-                    onClick={loadNextBatch}
-                    disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
-                  >
-                    Load Next Batch
-                  </button>
                 </div>
               </div>
             )}
