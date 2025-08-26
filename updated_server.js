@@ -33,6 +33,19 @@ app.use(cors({
 
 app.use(express.json());
 
+// Root endpoint - for basic testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Contact Caller Backend API',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      contacts: '/api/contacts (POST)',
+      complete: '/api/complete (POST)'
+    }
+  });
+});
+
 // Health check endpoint - CRITICAL for testing
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -42,11 +55,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Google Sheets setup
+// Google Sheets setup with better error handling
 const serviceAccountAuth = new JWT({
   email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
   key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+});
+
+// Debug endpoint to check auth setup
+app.get('/api/debug-auth', (req, res) => {
+  res.json({
+    hasEmail: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    hasKey: !!process.env.GOOGLE_PRIVATE_KEY,
+    emailValue: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? 'Set' : 'Missing',
+    keyLength: process.env.GOOGLE_PRIVATE_KEY?.length || 0,
+    keyStart: process.env.GOOGLE_PRIVATE_KEY?.substring(0, 30) + '...' || 'Missing'
+  });
 });
 
 // Get contacts from spreadsheet
