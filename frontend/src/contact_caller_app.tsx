@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Users, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+import { Phone, Users, CheckCircle, AlertCircle, Loader2, RefreshCw, ExternalLink } from 'lucide-react';
+
+// Define the constant SHEET_URL
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/164SyT0TAXuWeMI1jfbj7ey0S80wUgLOPwB_E9wdBimk/edit?gid=0#gid=0";
 
 const ContactCallerApp = () => {
   const [contacts, setContacts] = useState([]);
   const [currentContact, setCurrentContact] = useState(null);
   const [callerName, setCallerName] = useState('');
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [stats, setStats] = useState({ total: 0, completed: 0 });
 
   // Prefer env var for flexibility
-const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
-
+  const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
 
   // Test backend connection
   const testBackend = async () => {
@@ -32,14 +33,8 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
 
   // Load contacts from spreadsheet
   const loadContacts = async () => {
-    if (!spreadsheetUrl.trim()) {
-      setError('Please enter a valid spreadsheet URL');
-      return;
-    }
-
     setLoading(true);
     setError('');
-
     try {
       // Test backend first
       const backendOk = await testBackend();
@@ -50,7 +45,7 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ spreadsheetUrl }),
+        body: JSON.stringify({ spreadsheetUrl: SHEET_URL }),
       });
 
       if (!response.ok) {
@@ -85,7 +80,6 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
 
     setLoading(true);
     setError('');
-
     try {
       const response = await fetch(`${BACKEND_URL}/api/complete`, {
         method: 'POST',
@@ -93,7 +87,7 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          spreadsheetUrl,
+          spreadsheetUrl: SHEET_URL,
           rowIndex: currentContact.rowIndex,
           completedBy: callerName.trim(),
         }),
@@ -127,21 +121,15 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
 
   // Test spreadsheet connection
   const testConnection = async () => {
-    if (!spreadsheetUrl.trim()) {
-      setError('Please enter a spreadsheet URL first');
-      return;
-    }
-
     setLoading(true);
     setError('');
-
     try {
       const response = await fetch(`${BACKEND_URL}/api/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ spreadsheetUrl }),
+        body: JSON.stringify({ spreadsheetUrl: SHEET_URL }),
       });
 
       if (!response.ok) {
@@ -204,16 +192,18 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Google Sheets URL
+                Google Sheet
               </label>
               <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={spreadsheetUrl}
-                  onChange={(e) => setSpreadsheetUrl(e.target.value)}
-                  placeholder="https://docs.google.com/spreadsheets/d/..."
-                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <a
+                  href={SHEET_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 p-3 bg-blue-100 border border-blue-300 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center gap-2 text-blue-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open Google Sheet
+                </a>
                 <button
                   onClick={testConnection}
                   disabled={loading}
@@ -227,7 +217,7 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
 
             <button
               onClick={loadContacts}
-              disabled={loading || !spreadsheetUrl.trim()}
+              disabled={loading}
               className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
@@ -285,7 +275,7 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
                 {Object.entries(currentContact).map(([key, value]) => {
                   if (key === 'rowIndex') return null;
                   return (
-                    <div key={key} className="border-b border-gray-200 pb-2">
+                    <div className="border-b border-gray-200 pb-2" key={key}>
                       <div className="text-sm font-medium text-gray-600 capitalize">{key}</div>
                       <div className="text-lg text-gray-800">{value || 'N/A'}</div>
                     </div>
@@ -308,7 +298,7 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://conta
         )}
 
         {/* No contacts state */}
-        {contacts.length === 0 && !loading && spreadsheetUrl && (
+        {contacts.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-xl shadow-lg">
             <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">No Contacts Available</h3>
