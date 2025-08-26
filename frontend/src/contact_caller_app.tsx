@@ -211,33 +211,46 @@ const ContactCallerApp = () => {
               </div>
             )}
 
-            {/* Current Contacts Table (up to 12) */}
-            {contacts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Current Contacts
-                </h3>
+           {/* Current Contacts Table (up to 12) */}
+{contacts.length > 0 && (
+  <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <Phone className="h-5 w-5" />
+      Current Contacts
+    </h3>
 
-                <div className="grid gap-3">
-                  {contacts.slice(0, 12).map((contact) => (
-                    <div
-                      key={contact.rowIndex}
-                      className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gray-200 rounded-md"
-                    >
-                      <div className="text-gray-800 font-medium">{contact.Contact}</div>
-                      <a
-                        href={`https://wa.me/${contact.Contact}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-600 font-semibold hover:underline"
-                      >
-                        WhatsApp
-                      </a>
-                      <button
-                        onClick={() => completeContact(contact)}
-                        disabled={loading || !callerName.trim()}
-                        className="bg-blue-600 text-white px-3 py-1
+    <div className="grid gap-3">
+      {contacts.slice(0, 12).map((contact) => (
+        <div
+          key={contact.rowIndex}
+          className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gray-200 rounded-md"
+        >
+          <div className="text-gray-800 font-medium">{contact.Contact}</div>
+          <a
+            href={`https://wa.me/${contact.Contact}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-green-600 font-semibold hover:underline"
+          >
+            WhatsApp
+          </a>
+          <button
+            onClick={() => completeContact(contact)}
+            disabled={loading || !callerName.trim()}
+            className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
+          >
+            Complete
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
-                      </div> // closes the last container
+{/* Closing all parent containers */}
+</div> {/* closes max-w-4xl container */}
+</div> {/* closes min-h-screen container */}
+);
+};
 
+export default ContactCallerApp;
