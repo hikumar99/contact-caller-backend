@@ -207,15 +207,24 @@ const ContactCallerApp = () => {
               </div>
             )}
 
-            {/* Contacts Table */}
-            {contacts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Current Contacts
-                </h3>
-                <div className="grid gap-3">
-                  {contacts.slice(0, 12).map((contact) => (
-                    <div
-                      key={contact.rowIndex}
-                      className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gr
+           {/* Contacts Table */}
+{contacts.length > 0 && (
+  <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <Phone className="h-5 w-5" />
+      Current Contacts
+    </h3>
+    <div className="grid gap-3">
+      {contacts.slice(0, 12).map((contact) => (
+        <div
+          key={contact.rowIndex}
+          className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gray-200"
+        >
+          <span>{contact.name}</span>
+          <span>{contact.phone}</span>
+          <span>{contact.email}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
