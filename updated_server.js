@@ -1,3 +1,7 @@
+const http = require('http');   // correct way to import Node's http module
+const express = require('express');
+const cors = require('cors');
+
 // server.js - Updated for Contact | Status | CompletedBy | CompletedAt
 const express = require('express');
 const cors = require('cors');
