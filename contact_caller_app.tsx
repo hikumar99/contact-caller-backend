@@ -12,7 +12,7 @@ const ContactCallerApp = () => {
   const [stats, setStats] = useState({ total: 0, completed: 0 });
 
   // Backend URL - Update this to your deployed backend
-  const BACKEND_URL = 'https://contact-caller-backend.onrender.com';
+  const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
 
   // Test backend connection
   const testBackend = async () => {
