@@ -1,0 +1,13 @@
+{
+  "name": "contact-caller-backend",
+  "version": "1.0.0",
+  "main": "updated_server.js",
+  "scripts": {
+    "start": "node updated_server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "googleapis": "^105.0.0"
+  }
+}
