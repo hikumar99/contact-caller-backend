@@ -128,8 +128,8 @@ app.post('/api/contacts', async (req, res) => {
       const row = rows[i];
       const contact = {};
       headers.forEach((header, index) => {
-        contact[header] = row[index] || '';
-      });
+  contact[header] = (row[index] !== undefined) ? row[index] : '';
+});
 
       const hasContact = contact['contact'] && contact['contact'].trim() !== '';
       const notCompleted = !contact['completedby'] || contact['completedby'].trim() === '';
