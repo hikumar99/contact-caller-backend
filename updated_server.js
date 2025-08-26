@@ -1,4 +1,4 @@
-// server.js - Updated with stronger empty cell handling + debug logs
+// server.js - Updated for Contact | Status | CompletedBy | CompletedAt
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
@@ -6,17 +6,12 @@ const { google } = require('googleapis');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// --- CORS (env-driven) ---
+// --- CORS ---
 const rawOrigins = process.env.ALLOWED_ORIGINS || '';
-const allowedOrigins = rawOrigins
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
-
+const allowedOrigins = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
 if (allowedOrigins.length === 0) {
   allowedOrigins.push('http://localhost:5173', 'http://localhost:3000');
 }
-
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -28,18 +23,17 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
-
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
-// Request logging
+// Logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
-// Credentials
+// --- Google Auth ---
 let credentials = null;
 try {
   if (process.env.GOOGLE_CREDENTIALS) {
@@ -57,7 +51,6 @@ try {
   credentials = null;
 }
 
-// Google Sheets API
 const authorize = async () => {
   if (!credentials) throw new Error('Google credentials not configured properly');
   const auth = new google.auth.GoogleAuth({
@@ -66,22 +59,13 @@ const authorize = async () => {
   });
   return auth.getClient();
 };
-
 const sheets = google.sheets('v4');
 
 // Extract spreadsheet ID
 const extractSpreadsheetId = (url) => {
   if (!url || typeof url !== 'string') return null;
-  const patterns = [
-    /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/,
-    /\/spreadsheets\/u\/\d+\/d\/([a-zA-Z0-9-_]+)/,
-    /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)\/edit/
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : null;
 };
 
 // Health
@@ -107,18 +91,7 @@ app.post('/api/contacts', async (req, res) => {
     const response = await sheets.spreadsheets.values.get({
       auth,
       spreadsheetId,
-      range: 'Sheet1!A:D', // ✅ Contact | Status | CompletedBy | CompletedAt
-      
-     const hasContact = contact['contact'] && contact['contact'] !== '';
-    const status = contact['status'] ? contact['status'].toLowerCase() : 'pending';
-    const isPending = status === 'pending';
-
-    if (hasContact && isPending) {
-      contact.rowIndex = i + 1;
-      contacts.push(contact);
-}
-
-
+      range: 'Sheet1!A:D', // Contact | Status | CompletedBy | CompletedAt
     });
 
     const rows = response.data.values || [];
@@ -126,7 +99,7 @@ app.post('/api/contacts', async (req, res) => {
       return res.json({ contacts: [], message: 'No contact data found' });
     }
 
-    // Case-insensitive headers
+    // Normalize headers
     const headers = rows[0].map(h => h.trim().toLowerCase());
     const contacts = [];
 
@@ -134,34 +107,30 @@ app.post('/api/contacts', async (req, res) => {
       const row = rows[i];
       const contact = {};
 
-      // Ensure row always has 4 columns
-while (row.length < headers.length) {
-  row.push('');
-}
-
-headers.forEach((header, index) => {
-  let value = row[index] || '';
-  if (typeof value === 'string') value = value.trim();
-  contact[header] = value;
-});
-
-
-      const hasContact = contact['contact'] && contact['contact'].trim() !== '';
-      const notCompleted = !contact['completedby'] || contact['completedby'] === '';
-
-      // Debug first 5 rows
-      if (i <= 5) {
-        console.log(`Row ${i}:`, contact);
+      // Ensure row has 4 columns
+      while (row.length < headers.length) {
+        row.push('');
       }
 
-      if (hasContact && notCompleted) {
-        contact.rowIndex = i + 1; // Store the row index
+      headers.forEach((header, index) => {
+        let value = row[index] || '';
+        if (typeof value === 'string') value = value.trim();
+        contact[header] = value;
+      });
+
+      // ✅ filter only pending
+      const hasContact = contact['contact'] && contact['contact'] !== '';
+      const status = contact['status'] ? contact['status'].toLowerCase() : 'pending';
+      const isPending = status === 'pending';
+
+      if (hasContact && isPending) {
+        contact.rowIndex = i + 1;
         contacts.push(contact);
       }
     }
 
     console.log(`📊 Found ${rows.length - 1} rows in spreadsheet`);
-    console.log(`✅ Returning ${contacts.length} available contacts`);
+    console.log(`✅ Returning ${contacts.length} pending contacts`);
     res.json({ contacts });
   } catch (error) {
     console.error('❌ Error fetching contacts:', error);
@@ -191,11 +160,10 @@ app.post('/api/complete', async (req, res) => {
     }).format(now);
 
     const updateRequests = [
-  { range: `Sheet1!B${rowIndex}`, values: [['Completed']] },   // ✅ Status
-  { range: `Sheet1!C${rowIndex}`, values: [[completedBy]] },   // ✅ CompletedBy
-  { range: `Sheet1!D${rowIndex}`, values: [[istTime]] }        // ✅ CompletedAt
-];
-
+      { range: `Sheet1!B${rowIndex}`, values: [['Completed']] },   // Status
+      { range: `Sheet1!C${rowIndex}`, values: [[completedBy]] },   // CompletedBy
+      { range: `Sheet1!D${rowIndex}`, values: [[istTime]] }        // CompletedAt
+    ];
 
     await sheets.spreadsheets.values.batchUpdate({
       auth,
@@ -215,16 +183,21 @@ app.post('/api/test', async (req, res) => {
   try {
     const { spreadsheetUrl } = req.body;
     const spreadsheetId = extractSpreadsheetId(spreadsheetUrl);
-    if (!spreadsheetId) return res.status(400).json({ error: 'Invalid spreadsheet URL' });
+    if (!spreadsheetId) return res.status(400).json({ error: 'Invalid spreadsheet URL format' });
 
     const auth = await authorize();
-    const meta = await sheets.spreadsheets.get({ auth, spreadsheetId });
-    res.json({ success: true, spreadsheetTitle: meta.data.properties.title });
+    const response = await sheets.spreadsheets.get({
+      auth,
+      spreadsheetId,
+    });
+
+    res.json({ success: true, title: response.data.properties.title });
   } catch (error) {
+    console.error('❌ Error testing spreadsheet:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server started on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
