@@ -207,25 +207,50 @@ const ContactCallerApp = () => {
               </div>
             )}
 
-           {/* Contacts Table */}
-{contacts.length > 0 && (
-  <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-      <Phone className="h-5 w-5" />
-      Current Contacts
-    </h3>
-    <div className="grid gap-3">
-      {contacts.slice(0, 12).map((contact) => (
-        <div
-          key={contact.rowIndex}
-          className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gray-200"
-        >
-          <span>{contact.name}</span>
-          <span>{contact.phone}</span>
-          <span>{contact.email}</span>
-        </div>
-      ))}
+            {/* Contacts Table */}
+            {contacts.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Current Contacts
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left p-3 font-medium text-gray-700">Name</th>
+                        <th className="text-left p-3 font-medium text-gray-700">Phone</th>
+                        <th className="text-left p-3 font-medium text-gray-700">Email</th>
+                        <th className="text-left p-3 font-medium text-gray-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contacts.slice(0, 12).map((contact) => (
+                        <tr key={contact.rowIndex} className="border-b border-gray-100">
+                          <td className="p-3">{contact.name}</td>
+                          <td className="p-3">{contact.phone}</td>
+                          <td className="p-3">{contact.email}</td>
+                          <td className="p-3">
+                            <button
+                              onClick={() => completeContact(contact)}
+                              disabled={loading}
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                            >
+                              Complete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
-  </div>
-)}
+  );
+};
 
+export default ContactCallerApp;
