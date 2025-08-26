@@ -153,13 +153,14 @@ const ContactCallerApp = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 autoFocus
               />
-              <button
+             <button
   onClick={() => completeContact(contact)}
   disabled={loading || !callerName.trim()}
   className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
 >
-  Mark as Completed
+  Complete
 </button>
+
             </div>
           </div>
         )}
@@ -237,3 +238,6 @@ const ContactCallerApp = () => {
                         onClick={() => completeContact(contact)}
                         disabled={loading || !callerName.trim()}
                         className="bg-blue-600 text-white px-3 py-1
+
+                      </div> // closes the last container
+
