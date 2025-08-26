@@ -164,21 +164,29 @@ const ContactCallerApp = () => {
               Get Started
             </h2>
             
-            <form onSubmit={handleNameSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter your name to begin calling contacts
-                </label>
-                <input
-                  type="text"
-                  value={callerName}
-                  onChange={(e) => setCallerName(e.target.value)}
-                  placeholder="Enter your name and press Enter"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  autoFocus
-                />
-              </div>
-            </form>
+            <div className="space-y-4">
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Enter your name to begin calling contacts
+  </label>
+  <input
+    type="text"
+    value={callerName}
+    onChange={(e) => setCallerName(e.target.value)}
+    placeholder="Enter your name"
+    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    autoFocus
+  />
+  <button
+    onClick={handleNameSubmit}
+    disabled={!callerName.trim()}
+    className={`w-full p-3 mt-2 text-white rounded-lg ${
+      callerName.trim() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
+    }`}
+  >
+    Load Contacts
+  </button>
+</div>
+
           </div>
         )}
 
