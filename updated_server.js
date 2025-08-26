@@ -133,11 +133,17 @@ if (hasContact && isPending) {
       const row = rows[i];
       const contact = {};
 
-      headers.forEach((header, index) => {
-        let value = (row[index] !== undefined) ? row[index] : '';
-        if (typeof value === 'string') value = value.trim();
-        contact[header] = value;
-      });
+      // Ensure row always has 4 columns
+while (row.length < headers.length) {
+  row.push('');
+}
+
+headers.forEach((header, index) => {
+  let value = row[index] || '';
+  if (typeof value === 'string') value = value.trim();
+  contact[header] = value;
+});
+
 
       const hasContact = contact['contact'] && contact['contact'].trim() !== '';
       const notCompleted = !contact['completedby'] || contact['completedby'] === '';
