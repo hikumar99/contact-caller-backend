@@ -233,8 +233,20 @@ const ContactCallerApp = () => {
                     </thead>
                     <tbody>
                       {contacts.slice(0, 12).map((contact, index) => {
-                        // Extract phone number - try different possible property names
-                        const phoneNumber = contact.phone || contact.Phone || contact['Phone Number'] || contact.number || contact.Number || contact[0] || 'N/A';
+                        // Extract phone number - try different possible property names including "Contact" with spaces
+                        const phoneNumber = contact['Contact'] || 
+                                          contact[' Contact '] || 
+                                          contact['Contact '] || 
+                                          contact[' Contact'] ||
+                                          contact.contact || 
+                                          contact.Contact ||
+                                          contact.phone || 
+                                          contact.Phone || 
+                                          contact['Phone Number'] || 
+                                          contact.number || 
+                                          contact.Number || 
+                                          contact[0] || 
+                                          'N/A';
                         // Clean phone number for WhatsApp (remove spaces, dashes, etc.)
                         const cleanPhone = typeof phoneNumber === 'string' ? phoneNumber.replace(/[^\d+]/g, '') : phoneNumber;
                         
