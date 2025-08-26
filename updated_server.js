@@ -61,8 +61,8 @@ const authorize = async () => {
 };
 const sheets = google.sheets('v4');
 
-// Fixed spreadsheet ID (no extraction needed)
-const extractSpreadsheetId = () => {
+// Fixed spreadsheet ID (ignores any input)
+const extractSpreadsheetId = (_url) => {
   return "164SyT0TAXuWeMI1jfbj7ey0S80wUgLOPwB_E9wdBimk";
 };
 
