@@ -1,13 +1,29 @@
 {
   "name": "contact-caller-backend",
   "version": "1.0.0",
+  "description": "Backend for Contact Caller app with Google Sheets integration",
   "main": "updated_server.js",
   "scripts": {
-    "start": "node updated_server.js"
+    "start": "node updated_server.js",
+    "dev": "nodemon updated_server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "googleapis": "^105.0.0"
-  }
+    "google-spreadsheet": "^4.1.2",
+    "google-auth-library": "^9.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "express",
+    "google-sheets",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT"
 }
