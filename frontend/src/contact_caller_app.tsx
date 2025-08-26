@@ -1,27 +1,26 @@
 import { useState } from "react";
+import ContactsScreen from "./ContactsScreen"; // keep your original component
 
 export default function ContactCallerApp() {
   const [nameInput, setNameInput] = useState("");
   const [enteredName, setEnteredName] = useState<string | null>(null);
-  const [showContacts, setShowContacts] = useState(false);
 
   const handleLoadContacts = () => {
-    if (!nameInput.trim()) return; // don’t allow empty
+    if (!nameInput.trim()) return;
     setEnteredName(nameInput.trim());
-    setShowContacts(true);
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      {/* Step 1: Input + Button visible initially */}
-      {!showContacts && (
+      {/* Input + Load Contacts button (always visible initially) */}
+      {!enteredName && (
         <>
           <input
             type="text"
             placeholder="Enter your name"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
-            className="p-2 border rounded w-64 mb-4"
+            className="p-2 border rounded w-64 mb-2"
           />
           <button
             className={`px-4 py-2 rounded text-white ${
@@ -37,16 +36,8 @@ export default function ContactCallerApp() {
         </>
       )}
 
-      {/* Step 2: Contacts screen after button click */}
-      {showContacts && (
-        <div className="mt-8 w-full max-w-lg">
-          {/* Replace below with your actual contacts/progress component */}
-          <p className="text-lg font-semibold">
-            Contacts for <span className="text-blue-600">{enteredName}</span>
-          </p>
-          {/* Example: <ContactsScreen name={enteredName} /> */}
-        </div>
-      )}
+      {/* Show your original contacts screen after clicking Load Contacts */}
+      {enteredName && <ContactsScreen userName={enteredName} />}
     </div>
   );
 }
