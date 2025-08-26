@@ -109,14 +109,15 @@ app.post('/api/contacts', async (req, res) => {
       spreadsheetId,
       range: 'Sheet1!A:D', // ✅ Contact | Status | CompletedBy | CompletedAt
       
-      const hasContact = contact['contact'] && contact['contact'] !== '';
-const status = contact['status'] ? contact['status'].toLowerCase() : 'pending';
-const isPending = status === 'pending';
+     const hasContact = contact['contact'] && contact['contact'] !== '';
+    const status = contact['status'] ? contact['status'].toLowerCase() : 'pending';
+    const isPending = status === 'pending';
 
-if (hasContact && isPending) {
-  contact.rowIndex = i + 1;
-  contacts.push(contact);
+    if (hasContact && isPending) {
+      contact.rowIndex = i + 1;
+      contacts.push(contact);
 }
+
 
     });
 
