@@ -2,7 +2,6 @@
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -36,6 +35,12 @@ app.use(express.json({ limit: '10mb' }));
 // Request logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// Debug middleware to log req.headers.origin
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Request origin: ${req.headers.origin || 'undefined'}`);
   next();
 });
 
@@ -157,7 +162,6 @@ app.post('/api/complete', async (req, res) => {
     if (!spreadsheetId) return res.status(400).json({ error: 'Invalid spreadsheet URL format' });
 
     const auth = await authorize();
-
     const now = new Date();
     const istTime = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
