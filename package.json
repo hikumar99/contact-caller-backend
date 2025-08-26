@@ -1,0 +1,28 @@
+{
+  "name": "contact-caller-backend",
+  "version": "1.0.0",
+  "description": "Backend for contact caller app with Google Sheets integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "googleapis": "^128.0.0"
+  },
+  "keywords": [
+    "google-sheets",
+    "api",
+    "nodejs",
+    "express",
+    "contacts",
+    "whatsapp"
+  ],
+  "author": "Contact Caller Team",
+  "license": "ISC"
+}
