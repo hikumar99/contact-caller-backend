@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, Users, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
-// Define the constant SHEET_URL
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/164SyT0TAXuWeMI1jfbj7ey0S80wUgLOPwB_E9wdBimk/edit?gid=0#gid=0";
 
 const ContactCallerApp = () => {
@@ -16,20 +15,18 @@ const ContactCallerApp = () => {
 
   const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
 
-  // Test backend connection
   const testBackend = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/health`);
       if (!response.ok) throw new Error(`Backend error: ${response.status}`);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Backend connection failed:', error);
       setError(`Backend connection failed: ${error.message}`);
       return false;
     }
   };
 
-  // Load contacts from spreadsheet
   const loadContacts = async () => {
     if (!callerName.trim()) {
       setError('Please enter your name');
@@ -65,7 +62,7 @@ const ContactCallerApp = () => {
       } else {
         setError('No available contacts found in spreadsheet');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading contacts:', error);
       setError(`Failed to load contacts: ${error.message}`);
     } finally {
@@ -73,8 +70,7 @@ const ContactCallerApp = () => {
     }
   };
 
-  // Mark contact as completed
-  const completeContact = async (contactToComplete) => {
+  const completeContact = async (contactToComplete: any) => {
     if (!contactToComplete || !callerName.trim()) {
       setError('Please enter your name first');
       return;
@@ -103,7 +99,7 @@ const ContactCallerApp = () => {
       setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
 
       setSuccess('Contact completed!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error completing contact:', error);
       setError(`Failed to mark contact as complete: ${error.message}`);
     } finally {
@@ -111,7 +107,6 @@ const ContactCallerApp = () => {
     }
   };
 
-  // Clear messages after 5 seconds
   useEffect(() => {
     if (error || success) {
       const timer = setTimeout(() => {
@@ -134,7 +129,7 @@ const ContactCallerApp = () => {
           <p className="text-gray-600">Coordinate team calling efforts with real-time Google Sheets integration</p>
         </div>
 
-        {/* Name Input + Load Contacts Button */}
+        {/* Input Panel */}
         {showInputPanel && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -153,19 +148,20 @@ const ContactCallerApp = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 autoFocus
               />
-             <button
-  onClick={() => completeContact(contact)}
-  disabled={loading || !callerName.trim()}
-  className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
->
-  Complete
-</button>
-
+              <button
+                onClick={loadContacts}
+                disabled={!callerName.trim()}
+                className={`w-full p-3 mt-2 text-white rounded-lg ${
+                  callerName.trim() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Load Contacts
+              </button>
             </div>
           </div>
         )}
 
-        {/* Progress & Messages */}
+        {/* Messages & Progress */}
         {showProgress && (
           <>
             {error && (
@@ -211,46 +207,15 @@ const ContactCallerApp = () => {
               </div>
             )}
 
-           {/* Current Contacts Table (up to 12) */}
-{contacts.length > 0 && (
-  <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-      <Phone className="h-5 w-5" />
-      Current Contacts
-    </h3>
-
-    <div className="grid gap-3">
-      {contacts.slice(0, 12).map((contact) => (
-        <div
-          key={contact.rowIndex}
-          className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gray-200 rounded-md"
-        >
-          <div className="text-gray-800 font-medium">{contact.Contact}</div>
-          <a
-            href={`https://wa.me/${contact.Contact}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-600 font-semibold hover:underline"
-          >
-            WhatsApp
-          </a>
-          <button
-            onClick={() => completeContact(contact)}
-            disabled={loading || !callerName.trim()}
-            className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
-          >
-            Complete
-          </button>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
-{/* Closing all parent containers */}
-</div> {/* closes max-w-4xl container */}
-</div> {/* closes min-h-screen container */}
-);
-};
-
-export default ContactCallerApp;
+            {/* Contacts Table */}
+            {contacts.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Current Contacts
+                </h3>
+                <div className="grid gap-3">
+                  {contacts.slice(0, 12).map((contact) => (
+                    <div
+                      key={contact.rowIndex}
+                      className="grid grid-cols-3 items-center gap-4 p-3 border-b border-gr
