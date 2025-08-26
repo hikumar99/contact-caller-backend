@@ -222,9 +222,10 @@ const ContactCallerApp = () => {
         >
           <span>{contact.name}</span>
           <span>{contact.phone}</span>
-          <span>{contact.status}</span>
+          <span>{contact.email}</span>
         </div>
       ))}
     </div>
   </div>
 )}
+
