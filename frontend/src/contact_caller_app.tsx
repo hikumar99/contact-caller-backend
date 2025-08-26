@@ -154,14 +154,12 @@ const ContactCallerApp = () => {
                 autoFocus
               />
               <button
-                onClick={loadContacts}
-                disabled={!callerName.trim()}
-                className={`w-full p-3 mt-2 text-white rounded-lg ${
-                  callerName.trim() ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
-                }`}
-              >
-                Load Contacts
-              </button>
+  onClick={() => completeContact(contact)}
+  disabled={loading || !callerName.trim()}
+  className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700"
+>
+  Mark as Completed
+</button>
             </div>
           </div>
         )}
