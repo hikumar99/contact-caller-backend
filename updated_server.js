@@ -61,12 +61,11 @@ const authorize = async () => {
 };
 const sheets = google.sheets('v4');
 
-// Extract spreadsheet ID
-const extractSpreadsheetId = (url) => {
-  if (!url || typeof url !== 'string') return null;
-  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  return match ? match[1] : null;
+// Fixed spreadsheet ID (no extraction needed)
+const extractSpreadsheetId = () => {
+  return "164SyT0TAXuWeMI1jfbj7ey0S80wUgLOPwB_E9wdBimk";
 };
+
 
 // Health
 app.get('/api/health', (req, res) => {
