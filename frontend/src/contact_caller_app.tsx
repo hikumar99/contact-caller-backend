@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Users, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Phone, Users, CheckCircle, AlertCircle, Loader2, BarChart3, X } from 'lucide-react';
 
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/164SyT0TAXuWeMI1jfbj7ey0S80wUgLOPwB_E9wdBimk/edit?gid=0#gid=0";
 
@@ -14,6 +14,8 @@ const ContactCallerApp = () => {
   const [showInputPanel, setShowInputPanel] = useState(true);
   const [showProgress, setShowProgress] = useState(false);
   const [currentBatchNumber, setCurrentBatchNumber] = useState(1);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(null);
 
   const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
 
@@ -88,6 +90,9 @@ const ContactCallerApp = () => {
           completed: 0, 
           assigned: firstBatch.length 
         });
+        
+        // Set session start time
+        setSessionStartTime(new Date());
         
         setSuccess(`Loaded your random batch with ${firstBatch.length} contacts!`);
       } else {
@@ -183,6 +188,34 @@ const ContactCallerApp = () => {
     }
   }, [error, success]);
 
+  // Calculate session duration
+  const getSessionDuration = () => {
+    if (!sessionStartTime) return '0m';
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - sessionStartTime) / (1000 * 60));
+    const hours = Math.floor(diffInMinutes / 60);
+    const minutes = diffInMinutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
+  // Calculate completion rate
+  const getCompletionRate = () => {
+    if (stats.total === 0) return 0;
+    return Math.round((stats.completed / stats.total) * 100);
+  };
+
+  // Calculate contacts per hour
+  const getContactsPerHour = () => {
+    if (!sessionStartTime || stats.completed === 0) return 0;
+    const now = new Date();
+    const diffInHours = (now - sessionStartTime) / (1000 * 60 * 60);
+    return Math.round(stats.completed / diffInHours);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto">
@@ -191,6 +224,15 @@ const ContactCallerApp = () => {
           <div className="flex justify-center items-center gap-3 mb-4">
             <Phone className="h-12 w-12 text-blue-600" />
             <h1 className="text-4xl font-bold text-gray-800">Contact Caller</h1>
+            {showProgress && (
+              <button
+                onClick={() => setShowStatsModal(true)}
+                className="ml-4 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-lg"
+                title="View Statistics"
+              >
+                <BarChart3 className="h-6 w-6" />
+              </button>
+            )}
           </div>
           <p className="text-gray-600">Coordinate team calling efforts with real-time Google Sheets integration</p>
         </div>
@@ -290,7 +332,7 @@ const ContactCallerApp = () => {
 
             {/* Contacts Table */}
             {contacts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6" data-contacts-table>
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Phone className="h-5 w-5" />
                   Your Assigned Batch #{currentBatchNumber} ({contacts.length}/12 remaining)
@@ -385,6 +427,108 @@ const ContactCallerApp = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* Stats Modal */}
+        {showStatsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6 text-indigo-600" />
+                  Session Statistics
+                </h2>
+                <button
+                  onClick={() => setShowStatsModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* User Info */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-800 mb-2">Caller Information</h3>
+                  <p className="text-blue-700"><strong>Name:</strong> {callerName}</p>
+                  <p className="text-blue-700"><strong>Current Batch:</strong> #{currentBatchNumber}</p>
+                  <p className="text-blue-700"><strong>Session Duration:</strong> {getSessionDuration()}</p>
+                </div>
+
+                {/* Progress Stats */}
+                <div className="bg-green-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-green-800 mb-3">Progress Overview</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+                      <div className="text-green-700">Completed</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">{stats.total - stats.completed}</div>
+                      <div className="text-orange-700">Pending</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Stats */}
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-purple-800 mb-3">Performance Metrics</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-purple-700">Total Contacts:</span>
+                      <span className="font-medium text-purple-800">{stats.total}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700">Completion Rate:</span>
+                      <span className="font-medium text-purple-800">{getCompletionRate()}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700">Contacts/Hour:</span>
+                      <span className="font-medium text-purple-800">{getContactsPerHour()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-purple-700">Current Batch:</span>
+                      <span className="font-medium text-purple-800">{contacts.length}/12 remaining</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800 mb-2">Overall Progress</h3>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${getCompletionRate()}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-center text-sm text-gray-600 mt-1">
+                    {stats.completed} of {stats.total} contacts completed
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setShowStatsModal(false)}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowStatsModal(false);
+                      // Scroll to contacts table
+                      document.querySelector('[data-contacts-table]')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg"
+                  >
+                    Continue Calling
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
