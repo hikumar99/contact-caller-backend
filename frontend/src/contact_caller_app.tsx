@@ -5,13 +5,15 @@ const SHEET_URL = "https://docs.google.com/spreadsheets/d/164SyT0TAXuWeMI1jfbj7e
 
 const ContactCallerApp = () => {
   const [contacts, setContacts] = useState([]);
+  const [allContacts, setAllContacts] = useState([]);
   const [callerName, setCallerName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [stats, setStats] = useState({ total: 0, completed: 0 });
+  const [stats, setStats] = useState({ total: 0, completed: 0, assigned: 0 });
   const [showInputPanel, setShowInputPanel] = useState(true);
   const [showProgress, setShowProgress] = useState(false);
+  const [currentBatchNumber, setCurrentBatchNumber] = useState(1);
 
   const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'https://contact-caller-backend.onrender.com';
 
@@ -25,6 +27,22 @@ const ContactCallerApp = () => {
       setError(`Backend connection failed: ${error.message}`);
       return false;
     }
+  };
+
+  // Function to shuffle array randomly
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Function to get next batch of 12 contacts
+  const getNextBatch = (allContactsList, completedCount) => {
+    const startIndex = completedCount;
+    return allContactsList.slice(startIndex, startIndex + 12);
   };
 
   const loadContacts = async () => {
@@ -54,11 +72,24 @@ const ContactCallerApp = () => {
       }
 
       const data = await response.json();
-      setContacts(data.contacts || []);
-      setStats({ total: data.contacts?.length || 0, completed: 0 });
-
+      
       if (data.contacts && data.contacts.length > 0) {
-        setSuccess(`Loaded ${data.contacts.length} contacts successfully!`);
+        // Shuffle all contacts randomly for this user
+        const shuffledContacts = shuffleArray(data.contacts);
+        setAllContacts(shuffledContacts);
+        
+        // Get first batch of 12
+        const firstBatch = getNextBatch(shuffledContacts, 0);
+        setContacts(firstBatch);
+        setCurrentBatchNumber(1);
+        
+        setStats({ 
+          total: shuffledContacts.length, 
+          completed: 0, 
+          assigned: firstBatch.length 
+        });
+        
+        setSuccess(`Loaded your random batch with ${firstBatch.length} contacts!`);
       } else {
         setError('No available contacts found in spreadsheet');
       }
@@ -94,16 +125,51 @@ const ContactCallerApp = () => {
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
+      // Remove completed contact from current list
       const updatedContacts = contacts.filter(c => c.rowIndex !== contactToComplete.rowIndex);
       setContacts(updatedContacts);
-      setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
+      
+      const newCompletedCount = stats.completed + 1;
+      setStats(prev => ({ 
+        ...prev, 
+        completed: newCompletedCount,
+        assigned: updatedContacts.length 
+      }));
 
       setSuccess('Contact completed!');
+
+      // If all 12 contacts are completed, automatically load next batch
+      if (updatedContacts.length === 0) {
+        loadNextBatch(newCompletedCount);
+      }
     } catch (error: any) {
       console.error('Error completing contact:', error);
       setError(`Failed to mark contact as complete: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNextBatch = (completedCount = stats.completed) => {
+    if (completedCount >= allContacts.length) {
+      setSuccess('All contacts completed! Great job!');
+      setContacts([]);
+      return;
+    }
+
+    const nextBatch = getNextBatch(allContacts, completedCount);
+    
+    if (nextBatch.length > 0) {
+      setContacts(nextBatch);
+      setCurrentBatchNumber(prev => prev + 1);
+      setStats(prev => ({ 
+        ...prev, 
+        assigned: nextBatch.length 
+      }));
+      setSuccess(`Batch #${currentBatchNumber + 1} loaded with ${nextBatch.length} contacts!`);
+    } else {
+      setSuccess('All contacts completed! Great job!');
+      setContacts([]);
     }
   };
 
@@ -189,11 +255,11 @@ const ContactCallerApp = () => {
             {/* Stats */}
             {contacts.length > 0 && (
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-3">Progress for {callerName}</h3>
-                <div className="grid grid-cols-3 gap-4 text-center">
+                <h3 className="text-lg font-semibold mb-3">Batch #{currentBatchNumber} Progress for {callerName}</h3>
+                <div className="grid grid-cols-4 gap-4 text-center">
                   <div className="bg-blue-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-blue-600">{contacts.length}</div>
-                    <div className="text-sm text-gray-600">Remaining</div>
+                    <div className="text-sm text-gray-600">Current Batch</div>
                   </div>
                   <div className="bg-green-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
@@ -201,9 +267,24 @@ const ContactCallerApp = () => {
                   </div>
                   <div className="bg-purple-50 rounded-lg p-4">
                     <div className="text-2xl font-bold text-purple-600">{stats.total}</div>
-                    <div className="text-sm text-gray-600">Total</div>
+                    <div className="text-sm text-gray-600">Total Available</div>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-orange-600">{12 - contacts.length}</div>
+                    <div className="text-sm text-gray-600">Done in Batch</div>
                   </div>
                 </div>
+                {contacts.length === 0 && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => loadNextBatch()}
+                      disabled={loading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+                    >
+                      Load Next Batch
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -212,7 +293,7 @@ const ContactCallerApp = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Phone className="h-5 w-5" />
-                  Current Contacts ({contacts.length} available)
+                  Your Assigned Batch #{currentBatchNumber} ({contacts.length}/12 remaining)
                 </h3>
                 
                 {/* Debug info - remove this after testing */}
@@ -232,7 +313,7 @@ const ContactCallerApp = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {contacts.slice(0, 12).map((contact, index) => {
+                      {contacts.map((contact, index) => {
                         // Extract phone number - try different possible property names including "Contact" with spaces
                         const phoneNumber = contact['Contact'] || 
                                           contact[' Contact '] || 
@@ -282,6 +363,24 @@ const ContactCallerApp = () => {
                       })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* Empty state when no contacts */}
+            {showProgress && contacts.length === 0 && !loading && (
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6 text-center">
+                <div className="py-8">
+                  <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Batch Completed!</h3>
+                  <p className="text-gray-600 mb-4">You've completed all contacts in your current batch.</p>
+                  <button
+                    onClick={loadNextBatch}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+                  >
+                    Load Next Batch
+                  </button>
                 </div>
               </div>
             )}
